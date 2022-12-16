@@ -66,7 +66,7 @@ typedef struct hash_table_s      hash_table_t;
 
 struct adjacency_node_s
 {
-  adjacency_node_t *next;            // link to th enext adjacency list node
+  adjacency_node_t *next;            // link to the next adjacency list node
   hash_table_node_t *vertex;         // the other vertex
 };
 
@@ -172,18 +172,31 @@ static hash_table_t *hash_table_create(void)
     fprintf(stderr,"create_hash_table: out of memory\n");
     exit(1);
   }
+  hash_table->hash_table_size=1024;
   hash_table->number_of_edges=0;
   hash_table->number_of_entries=0;
-  hash_table->heads=NULL;
-  // FAZER ALGO COM O I?
+  hash_table->heads=(hash_table_node_t *)malloc((size_t)hash_table->hash_table_size*sizeof(hash_table_node_t*));
+
+  for (i = 0; i<hash_table->hash_table_size; i++)
+  {
+    hash_table->heads[i] = (hash_table_node_t *)malloc(sizeof(hash_table_node_t));
+  }
   //
-  // complete this
+  // COMPLETED ?
   //
   return hash_table;
 }
 
 static void hash_table_grow(hash_table_t *hash_table)
 {
+  unsigned int i = hash_table->hash_table_size;
+
+  hash_table->hash_table_size *= 2;
+  // realloc() ???
+  for (i; i < hash_table->hash_table_size; i++)
+  {
+    hash_table->heads[i] = (hash_table_node_t *)malloc(sizeof(hash_table_node_t));
+  }
   // Dobrar tamanho
   // Calcular indexes novos?
   //
@@ -193,6 +206,13 @@ static void hash_table_grow(hash_table_t *hash_table)
 
 static void hash_table_free(hash_table_t *hash_table)
 {
+  unsigned int i;
+
+  for (i = 0; i<hash_table->hash_table_size; i++)
+  {
+    free_hash_table_node(hash_table->heads[i]);
+    free(hash_table->heads[i]);
+  }
   //
   // complete this
   //
