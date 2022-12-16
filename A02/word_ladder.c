@@ -4,7 +4,8 @@
 // Second practical assignement (speed run)
 //
 // Place your student numbers and names here
-//   N.Mec. XXXXXX  Name: XXXXXXX
+//   N.Mec. 108122  Name: Alexandre Pedro Ribeiro
+//   N.Mec. 110056  Name: Ricardo Manuel Quintaneiro Almeida
 //
 // Do as much as you can
 //   1) MANDATORY: complete the hash table code
@@ -39,6 +40,9 @@
 //      *) graph_info
 //   8) OPTIONAL: test for memory leaks
 //
+
+
+//                    graph vis, dot para representar grafos
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -168,6 +172,10 @@ static hash_table_t *hash_table_create(void)
     fprintf(stderr,"create_hash_table: out of memory\n");
     exit(1);
   }
+  hash_table->number_of_edges=0;
+  hash_table->number_of_entries=0;
+  hash_table->heads=NULL;
+  // FAZER ALGO COM O I?
   //
   // complete this
   //
@@ -176,6 +184,8 @@ static hash_table_t *hash_table_create(void)
 
 static void hash_table_grow(hash_table_t *hash_table)
 {
+  // Dobrar tamanho
+  // Calcular indexes novos?
   //
   // complete this
   //
@@ -195,6 +205,10 @@ static hash_table_node_t *find_word(hash_table_t *hash_table,const char *word,in
   unsigned int i;
 
   i = crc32(word) % hash_table->hash_table_size;
+
+  if (insert_if_not_found == 1) {
+    *(node->word) = word;                     // TO-DO
+  }
   //
   // complete this
   //
