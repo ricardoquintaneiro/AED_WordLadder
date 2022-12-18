@@ -225,12 +225,39 @@ static hash_table_node_t *find_word(hash_table_t *hash_table,const char *word,in
   unsigned int i;
 
   i = crc32(word) % hash_table->hash_table_size;
-
+  
+  hash_table_node_t list = hash_table->heads[i];
+  
   if (insert_if_not_found == 1) {
-    *(node->word) = word;                     // TO-DO
+	hash_table_node_t newItem = (hash_table_node_t *)malloc(sizeof(hash_table_node_t));
+	newItem->word = word;
+	newItem->next = NULL;
   }
+  
+  if (list == NULL) {
+	if (insert_if_not_found == 1) {
+		hash_table->heads[i] == newItem;
+		return newItem;
+	}
+	else {
+		return list;
+		// Aqui não sei bem o que é para dar return quando não encontra a palavra
+	}
+  }
+  else {
+	  while (list->next != NULL) {
+			  list = list->next;
+			  if (strcmp(list-> word,word) == 0) return list;
+	  }
+	  if (insert_if_not_found == 1) {
+		  list->next = newItem;
+		  return newItem;
+	  }
+	  return list;
+  }
+  
   //
-  // complete this
+  // COMPLETED ?
   //
   return node;
 }
