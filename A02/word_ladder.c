@@ -175,92 +175,85 @@ static hash_table_t *hash_table_create(void)
   hash_table->hash_table_size=1024;
   hash_table->number_of_edges=0;
   hash_table->number_of_entries=0;
-  hash_table->heads=(hash_table_node_t *)malloc((size_t)hash_table->hash_table_size*sizeof(hash_table_node_t*));
-
-  for (i = 0; i<hash_table->hash_table_size; i++)
+  hash_table->heads = (hash_table_node_t **)malloc(hash_table->hash_table_size * sizeof(hash_table_node_t *));
+  if(hash_table->heads == NULL)
   {
-    hash_table->heads[i] = allocate_hash_table_node();
+    fprintf(stderr,"create_hash_table: out of memory\n");
+    exit(1);
   }
-  //
-  // COMPLETED ?
-  //
+
+  for(i = 0; i < hash_table->hash_table_size; i++)
+    hash_table->heads[i] = NULL;
+
   return hash_table;
 }
 
 static void hash_table_grow(hash_table_t *hash_table)
 {
-  // // hash_table_t *new_hash_table = hash_table_create();
-  // unsigned int i = hash_table->hash_table_size;
+  unsigned int i, new_size;
+  hash_table_node_t *node, *next_node;
+  hash_table_node_t **new_heads;
 
-  // hash_table->hash_table_size *= 2;
-  // // realloc() ???
-  // for (i; i < hash_table->hash_table_size; i++)
-  // {
-  //   hash_table->heads[i] = allocate_hash_table_node();
-  // }
+  // Double the size of the hash table
+  new_size = 2 * hash_table->hash_table_size;
 
-  // // O stor disse para usar isto para o resize:
-  // // for(i = 0u;i < hash_table->hash_table_size;i++)
-  // //   for(node = hash_table->heads[i];node != NULL;node = node->next)
+  // Allocate a new array of heads for the new hash table
+  new_heads = (hash_table_node_t **)malloc(new_size * sizeof(hash_table_node_t *));
+  if(new_heads == NULL)
+  {
+    fprintf(stderr,"hash_table_grow: out of memory\n");
+    exit(1);
+  }
 
-  // // código do stor:
-  // //  next_node = node->next;
-  // //  ...
-  // //  node = next_node;
-  // //  guardar o ponteiro next e depois de usar um nó liberto-o
-  // // também dá para usar o find word para inserir o nó na nova lista
+  // Initialize all the linked lists in the new hash table to empty
+  for(i = 0; i < new_size; i++)
+    new_heads[i] = NULL;
 
-  // // Dobrar tamanho
-  // // Calcular indexes novos?
-  // //
-  // // complete this
-  // //
+  // Rehash all the nodes in the old hash table
+  for(i = 0u;i < hash_table->hash_table_size;i++)
+    for(node = hash_table->heads[i];node != NULL;node = next_node)
+    {
+      next_node = node->next;
+      // Compute the new hash value for this node
+      unsigned int hash_value = crc32(node->word) % new_size;
+      // Add the node to the linked list of the corresponding bucket in the new hash table
+      node->next = new_heads[hash_value];
+      new_heads[hash_value] = node;
+      node = next_node;
+    }
 
-  hash_table_t new_table;
-  hash_table_node_t node;
-  adjacency_node_t adjacency_node;
-  unsigned int i;
-
-  // create the new hash table
-  if (hash_table_create(&new_table, hash_table->hash_table_size 2) < 0)
-    return -1;
-
-  // rehash the entries in the old hash table
-  for (i = 0; i < hash_table->hash_table_size; i++)
-    for (node = hash_table->heads[i]; node != NULL; node = node->next)
-      if (find_word(&new_table, node->word, 1) == NULL)
-        return -1;
-
-  // transfer the adjacency lists from the old hash table to the new one
-  for (i = 0; i < hash_table->hash_table_size; i++)
-    for (node = hash_table->heads[i]; node != NULL; node = node->next)
-      for (adjacency_node = node->head; adjacency_node != NULL; adjacency_node = adjacency_node->next)
-        if (add_edge(&new_table, node, adjacency_node->vertex->word) < 0)
-          return -1;
-
-  // free the old hash table
-  hash_table_free(hash_table);
-
-  // update the table pointer
-  *hash_table = new_table;
-
-  // return success
-  return 0;
+  // Free the old array of heads and update the size and heads fields of the hash table structure
+  free(hash_table->heads);
+  hash_table->hash_table_size = new_size;
+  hash_table->heads = new_heads;
 }
+
 
 static void hash_table_free(hash_table_t *hash_table)
 {
   unsigned int i;
+  hash_table_node_t *node, *next_node;
+  adjacency_node_t *adj_node, *next_adj_node;
 
-  for (i = 0; i<hash_table->hash_table_size; i++)
+  // Free all the nodes and adjacency lists in the hash table
+  for (i = 0; i < hash_table->hash_table_size; i++)
   {
-    free_hash_table_node(hash_table->heads[i]);
-    // free(hash_table->heads[i]); // REDUNDANTE?
+    for (node = hash_table->heads[i]; node != NULL; node = next_node)
+    {
+      next_node = node->next;
+      // Free the adjacency list of this node
+      for (adj_node = node->head; adj_node != NULL; adj_node = next_adj_node)
+      {
+        next_adj_node = adj_node->next;
+        free_adjacency_node(adj_node);
+      }
+      // Free the node itself
+      free_hash_table_node(node);
+    }
   }
+
+  // Free the array of heads and the hash table structure
   free(hash_table->heads);
-  //
-  // COMPLETED ?
-  //
   free(hash_table);
 }
 
@@ -307,51 +300,39 @@ static void hash_table_free(hash_table_t *hash_table)
 //   return node;
 // }
 
-static hash_table_node_t* find_word(hash_table_t *table, char word, int insert_if_not_found)
+static hash_table_node_t *find_word(hash_table_t *hash_table, const char *word, int insert_if_not_found)
 {
-  hash_table_node_t *node = allocate_hash_table_node();
-  hash_table_node_t *new_node = allocate_hash_table_node();
+  hash_table_node_t *node;
   unsigned int i;
 
-  // find the hash table linked list head
-  i = crc32(word, table->hash_table_size);
+  i = crc32(word) % hash_table->hash_table_size;
 
-  // search the linked list for the word
-  for (node = table->heads[i]; node != NULL; node = node->next)
-    if (strcmp(word, node->word) == 0)
-      return node;
+  // Search for the word in the linked list of the corresponding bucket
+  for (node = hash_table->heads[i]; node != NULL; node = node->next)
+    if (strcmp(node->word, word) == 0)
+      return node; // The word was found
 
-  // the word was not found, insert it if requested
-  if (insert_if_not_found)
+  if (insert_if_not_found == 1) // Should the word be inserted if it was not found?
   {
-    // check if the hash table needs to grow
-    if (table->number_of_entries / (double)table->hash_table_size > max_hash_table_load)
-      if (hash_table_grow(table) < 0)
-        return NULL;
-
-    // allocate a new hash table node
-    new_node = (hash_table_node_t)malloc(sizeof(hash_table_node_t));
-    if (new_node == NULL)
-      return NULL;
-
-    // initialize the new hash table node
-    strcpy(new_node->word, word);
-    new_node->next = table->heads[i];
-    new_node->head = NULL;
-    new_node->representative = new_node;
-    new_node->number_of_vertices = 1;
-    new_node->number_of_edges = 0;
-
-    // insert the new hash table node
-    table->heads[i] = new_node;
-    table->number_of_entries++;
-
-    // return the new hash table node
-    return new_node;
+    // Allocate a new node and insert it at the beginning of the linked list
+    node = allocate_hash_table_node();
+    strcpy(node->word, word);
+    node->next = hash_table->heads[i];
+    node->head = NULL;            // Initialize the adjacency list to empty
+    node->visited = 0;            // Initialize the visited flag to 0
+    node->previous = NULL;        // Initialize the parent pointer to NULL
+    node->representative = node;  // Initialize the representative of the connected component to itself
+    node->number_of_vertices = 1; // Initialize the number of vertices in the connected component to 1 (itself)
+    node->number_of_edges = 0;    // Initialize the number of edges in the connected component to 0
+    hash_table->heads[i] = node;
+    hash_table->number_of_entries++;
+  }
+  else
+  {
+    node = NULL; // The word was not found and should not be inserted
   }
 
-  // the word was not found and it was not requested to insert it
-  return NULL;
+  return node;
 }
 
 //
@@ -365,9 +346,18 @@ static hash_table_node_t *find_representative(hash_table_node_t *node)
   // A segunda vez que se chama esta função tem que ir logo ao representante
   // em vez de percorrer cada ponteiro até lá chegar
 
-  //
-  // complete this
-  //
+  representative = node;
+  while(representative != representative->representative)
+    representative = representative->representative;
+
+  // Compress the path from node to the representative
+  next_node = node;
+  while(next_node != representative)
+  {
+    node = next_node;
+    next_node = node->representative;
+    node->representative = representative;
+  }
   return representative;
 }
 
@@ -390,14 +380,37 @@ static void add_edge(hash_table_t *hash_table,hash_table_node_t *from,const char
   // SE A PALAVRA EXISTIR, CRIAR 2 ARESTAS, UMA PARA CADA LADO?
   if (to != NULL)
   {
-    //
-    // complete this
-    //
+    // Allocate a new adjacency node
+    link = allocate_adjacency_node();
+    link->next = from->head;
+    link->vertex = to;
+    from->head = link;
+
+    // Find the representatives of the connected components
+    from_representative = find_representative(from);
+    to_representative = find_representative(to);
+
+    // Check if the vertices belong to different connected components
+    if (from_representative != to_representative)
+    {
+      // Merge the two connected components
+      if (from_representative->number_of_vertices < to_representative->number_of_vertices)
+      {
+        // The from_representative connected component has fewer vertices, so it becomes part of the to_representative connected component
+        from_representative->representative = to_representative;
+        to_representative->number_of_vertices += from_representative->number_of_vertices;
+        to_representative->number_of_edges += from_representative->number_of_edges
+      }
+      else
+      {
+        // The to_representative connected component has fewer vertices, so it becomes part of the from_representative connected component
+        to_representative->representative = from_representative;
+        from_representative->number_of_vertices += to_representative->number_of_vertices;
+        from_representative->number_of_edges += to_representative->number_of_edges;
+      }
+    }
   }
-  
 }
-
-
 //
 // generates a list of similar words and calls the function add_edge for each one (done)
 //
@@ -489,15 +502,75 @@ static void similar_words(hash_table_t *hash_table,hash_table_node_t *from)
 // returns the number of vertices visited; if the last one is goal, following the previous links gives the shortest path between goal and origin
 //
 
+typedef struct queue_node
+{
+  hash_table_node_t *value;
+  struct queue_node *next;
+} queue_node_t;
+
 static int breadh_first_search(int maximum_number_of_vertices,hash_table_node_t **list_of_vertices,hash_table_node_t *origin,hash_table_node_t *goal)
 {
-
   // USAR UMA FILA (QUEUE) COM UM ARRAY
   // para o tamanho usar o numero de vertices (do componente conexo)
 
-  //
-  // complete this
-  //
+  // Initialize the queue
+  queue_node_t *head = NULL;
+  queue_node_t *tail = NULL;
+
+  // Enqueue the origin node
+  queue_node_t *new_node = malloc(sizeof(queue_node_t));
+  new_node->value = origin;
+  new_node->next = NULL;
+
+  if (head == NULL)
+  {
+    head = new_node;
+    tail = new_node;
+  }
+  else
+  {
+    tail->next = new_node;
+    tail = new_node;
+  }
+
+  int distance = 0;
+  while (head != NULL)
+  {
+    // Dequeue the next node and check if it is the goal
+    if (head->value == goal)
+    {
+      return distance;
+    }
+
+    head = head->next;
+    distance++;
+
+    // Enqueue the neighbors of the dequeued node
+    for (int i = 0; i < maximum_number_of_vertices; i++)
+    {
+      if (list_of_vertices[i] != NULL && list_of_vertices[i]->visited == 0)
+      {
+        queue_node_t *new_node = malloc(sizeof(queue_node_t));
+        new_node->value = list_of_vertices[i];
+        new_node->next = NULL;
+
+        if (head == NULL)
+        {
+          head = new_node;
+          tail = new_node;
+        }
+        else
+        {
+          tail->next = new_node;
+          tail = new_node;
+        }
+
+        list_of_vertices[i]->visited = 1;
+      }
+    }
+  }
+
+  // Return -1 if the goal is not found
   return -1;
 }
 
