@@ -179,7 +179,7 @@ static hash_table_t *hash_table_create(void)
 
   for (i = 0; i<hash_table->hash_table_size; i++)
   {
-    hash_table->heads[i] = (hash_table_node_t *)malloc(sizeof(hash_table_node_t));
+    hash_table->heads[i] = allocate_hash_table_node();
   }
   //
   // COMPLETED ?
@@ -189,19 +189,63 @@ static hash_table_t *hash_table_create(void)
 
 static void hash_table_grow(hash_table_t *hash_table)
 {
-  unsigned int i = hash_table->hash_table_size;
+  // // hash_table_t *new_hash_table = hash_table_create();
+  // unsigned int i = hash_table->hash_table_size;
 
-  hash_table->hash_table_size *= 2;
-  // realloc() ???
-  for (i; i < hash_table->hash_table_size; i++)
-  {
-    hash_table->heads[i] = (hash_table_node_t *)malloc(sizeof(hash_table_node_t));
-  }
-  // Dobrar tamanho
-  // Calcular indexes novos?
-  //
-  // complete this
-  //
+  // hash_table->hash_table_size *= 2;
+  // // realloc() ???
+  // for (i; i < hash_table->hash_table_size; i++)
+  // {
+  //   hash_table->heads[i] = allocate_hash_table_node();
+  // }
+
+  // // O stor disse para usar isto para o resize:
+  // // for(i = 0u;i < hash_table->hash_table_size;i++)
+  // //   for(node = hash_table->heads[i];node != NULL;node = node->next)
+
+  // // código do stor:
+  // //  next_node = node->next;
+  // //  ...
+  // //  node = next_node;
+  // //  guardar o ponteiro next e depois de usar um nó liberto-o
+  // // também dá para usar o find word para inserir o nó na nova lista
+
+  // // Dobrar tamanho
+  // // Calcular indexes novos?
+  // //
+  // // complete this
+  // //
+
+  hash_table_t new_table;
+  hash_table_node_t node;
+  adjacency_node_t adjacency_node;
+  unsigned int i;
+
+  // create the new hash table
+  if (hash_table_create(&new_table, hash_table->hash_table_size 2) < 0)
+    return -1;
+
+  // rehash the entries in the old hash table
+  for (i = 0; i < hash_table->hash_table_size; i++)
+    for (node = hash_table->heads[i]; node != NULL; node = node->next)
+      if (find_word(&new_table, node->word, 1) == NULL)
+        return -1;
+
+  // transfer the adjacency lists from the old hash table to the new one
+  for (i = 0; i < hash_table->hash_table_size; i++)
+    for (node = hash_table->heads[i]; node != NULL; node = node->next)
+      for (adjacency_node = node->head; adjacency_node != NULL; adjacency_node = adjacency_node->next)
+        if (add_edge(&new_table, node, adjacency_node->vertex->word) < 0)
+          return -1;
+
+  // free the old hash table
+  hash_table_free(hash_table);
+
+  // update the table pointer
+  *hash_table = new_table;
+
+  // return success
+  return 0;
 }
 
 static void hash_table_free(hash_table_t *hash_table)
@@ -211,57 +255,104 @@ static void hash_table_free(hash_table_t *hash_table)
   for (i = 0; i<hash_table->hash_table_size; i++)
   {
     free_hash_table_node(hash_table->heads[i]);
-    free(hash_table->heads[i]);
+    // free(hash_table->heads[i]); // REDUNDANTE?
   }
+  free(hash_table->heads);
   //
-  // complete this
+  // COMPLETED ?
   //
   free(hash_table);
 }
 
-static hash_table_node_t *find_word(hash_table_t *hash_table,const char *word,int insert_if_not_found)
+// static hash_table_node_t *find_word(hash_table_t *hash_table,const char *word,int insert_if_not_found)
+// {
+//   hash_table_node_t *node;
+//   unsigned int i;
+
+//   i = crc32(word) % hash_table->hash_table_size;
+  
+//   hash_table_node_t *list = hash_table->heads[i];
+  
+//   if (insert_if_not_found == 1) {
+// 	hash_table_node_t *newItem = (hash_table_node_t *)malloc(sizeof(hash_table_node_t));
+// 	*newItem->word = word;
+// 	newItem->next = NULL;
+//   }
+  
+  
+//   if (list == NULL) {
+// 	if (insert_if_not_found == 1) {
+// 		hash_table->heads[i] = newItem;
+// 		return newItem;
+// 	}
+// 	else {
+// 		return list;
+// 		// Aqui não sei bem o que é para dar return quando não encontra a palavra
+// 	}
+//   }
+//   else {
+// 	  while (list->next != NULL) {
+// 			  list = list->next;
+// 			  if (strcmp(list-> word,word) == 0) return list;
+// 	  }
+// 	  if (insert_if_not_found == 1) {
+// 		  list->next = newItem;
+// 		  return newItem;
+// 	  }
+// 	  return list;
+//   }
+//   //
+//   // COMPLETED ?
+//   //
+//   return node;
+// }
+
+static hash_table_node_t* find_word(hash_table_t *table, char word, int insert_if_not_found)
 {
-  hash_table_node_t *node;
+  hash_table_node_t *node = allocate_hash_table_node();
+  hash_table_node_t *new_node = allocate_hash_table_node();
   unsigned int i;
 
-  i = crc32(word) % hash_table->hash_table_size;
-  
-  hash_table_node_t list = hash_table->heads[i];
-  
-  if (insert_if_not_found == 1) {
-	hash_table_node_t newItem = (hash_table_node_t *)malloc(sizeof(hash_table_node_t));
-	newItem->word = word;
-	newItem->next = NULL;
-  }
-  
-  if (list == NULL) {
-	if (insert_if_not_found == 1) {
-		hash_table->heads[i] == newItem;
-		return newItem;
-	}
-	else {
-		return list;
-		// Aqui não sei bem o que é para dar return quando não encontra a palavra
-	}
-  }
-  else {
-	  while (list->next != NULL) {
-			  list = list->next;
-			  if (strcmp(list-> word,word) == 0) return list;
-	  }
-	  if (insert_if_not_found == 1) {
-		  list->next = newItem;
-		  return newItem;
-	  }
-	  return list;
-  }
-  
-  //
-  // COMPLETED ?
-  //
-  return node;
-}
+  // find the hash table linked list head
+  i = crc32(word, table->hash_table_size);
 
+  // search the linked list for the word
+  for (node = table->heads[i]; node != NULL; node = node->next)
+    if (strcmp(word, node->word) == 0)
+      return node;
+
+  // the word was not found, insert it if requested
+  if (insert_if_not_found)
+  {
+    // check if the hash table needs to grow
+    if (table->number_of_entries / (double)table->hash_table_size > max_hash_table_load)
+      if (hash_table_grow(table) < 0)
+        return NULL;
+
+    // allocate a new hash table node
+    new_node = (hash_table_node_t)malloc(sizeof(hash_table_node_t));
+    if (new_node == NULL)
+      return NULL;
+
+    // initialize the new hash table node
+    strcpy(new_node->word, word);
+    new_node->next = table->heads[i];
+    new_node->head = NULL;
+    new_node->representative = new_node;
+    new_node->number_of_vertices = 1;
+    new_node->number_of_edges = 0;
+
+    // insert the new hash table node
+    table->heads[i] = new_node;
+    table->number_of_entries++;
+
+    // return the new hash table node
+    return new_node;
+  }
+
+  // the word was not found and it was not requested to insert it
+  return NULL;
+}
 
 //
 // add edges to the word ladder graph (mostly do be done)
@@ -271,11 +362,22 @@ static hash_table_node_t *find_representative(hash_table_node_t *node)
 {
   hash_table_node_t *representative,*next_node;
 
+  // A segunda vez que se chama esta função tem que ir logo ao representante
+  // em vez de percorrer cada ponteiro até lá chegar
+
   //
   // complete this
   //
   return representative;
 }
+
+// static hash_table_node_t *find_representative(hash_table_node_tnode)
+// {
+// // find the representative of the connected component this node belongs to
+// if (node->representative != node)
+// node->representative = find_representative(node->representative);
+// return node->representative;
+// }
 
 static void add_edge(hash_table_t *hash_table,hash_table_node_t *from,const char *word)
 {
@@ -283,9 +385,16 @@ static void add_edge(hash_table_t *hash_table,hash_table_node_t *from,const char
   adjacency_node_t *link;
 
   to = find_word(hash_table,word,0);
-  //
-  // complete this
-  //
+
+  // SE A PALAVRA NÃO ESTIVER NA HASH TABLE NÃO ACONTECE NADA
+  // SE A PALAVRA EXISTIR, CRIAR 2 ARESTAS, UMA PARA CADA LADO?
+  if (to != NULL)
+  {
+    //
+    // complete this
+    //
+  }
+  
 }
 
 
@@ -382,6 +491,10 @@ static void similar_words(hash_table_t *hash_table,hash_table_node_t *from)
 
 static int breadh_first_search(int maximum_number_of_vertices,hash_table_node_t **list_of_vertices,hash_table_node_t *origin,hash_table_node_t *goal)
 {
+
+  // USAR UMA FILA (QUEUE) COM UM ARRAY
+  // para o tamanho usar o numero de vertices (do componente conexo)
+
   //
   // complete this
   //
@@ -437,6 +550,9 @@ static void path_finder(hash_table_t *hash_table,const char *from_word,const cha
 
 static void graph_info(hash_table_t *hash_table)
 {
+
+  // para listar o nº de componentes conexos ver o nº de representativos diferentes
+
   //
   // complete this
   //
