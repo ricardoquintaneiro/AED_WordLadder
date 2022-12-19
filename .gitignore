@@ -55,3 +55,4 @@ dkms.conf
 # Additional Project Based Stuff
 
 A02/*.pdf
+A02/word_ladder
