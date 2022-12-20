@@ -161,7 +161,7 @@ unsigned int crc32(const char *str)
   return crc;
 }
 
-static hash_table_t *hash_table_create(void)
+static hash_table_t *hash_table_create(void)                         // CHECKED
 {
   hash_table_t *hash_table;
   unsigned int i;
@@ -172,30 +172,32 @@ static hash_table_t *hash_table_create(void)
     fprintf(stderr,"create_hash_table: out of memory\n");
     exit(1);
   }
-  hash_table->hash_table_size=1024;
-  hash_table->number_of_edges=0;
-  hash_table->number_of_entries=0;
+  hash_table->hash_table_size = 100;
+  hash_table->number_of_edges = 0;
+  hash_table->number_of_entries = 0;
   hash_table->heads = (hash_table_node_t **)malloc(hash_table->hash_table_size * sizeof(hash_table_node_t *));
-  if(hash_table->heads == NULL)
+  if (hash_table->heads == NULL)
   {
-    fprintf(stderr,"create_hash_table: out of memory\n");
+    fprintf(stderr, "create_hash_table: out of memory\n");
     exit(1);
   }
 
-  for(i = 0; i < hash_table->hash_table_size; i++)
+  for (i = 0u; i < hash_table->hash_table_size; i++)
     hash_table->heads[i] = NULL;
 
+  printf("Hash table created (size: %d)\n", hash_table->hash_table_size);
+  
   return hash_table;
 }
 
-static void hash_table_grow(hash_table_t *hash_table)
+static void hash_table_grow(hash_table_t *hash_table) // MUDAR O NOME DO HASH_VALUE?
 {
-  unsigned int i, new_size;
+  unsigned int i, new_size, hash_value;
   hash_table_node_t *node, *next_node;
   hash_table_node_t **new_heads;
 
   // Double the size of the hash table
-  new_size = 2 * hash_table->hash_table_size;
+  new_size = ((1.5) * hash_table->hash_table_size) + 1;
 
   // Allocate a new array of heads for the new hash table
   new_heads = (hash_table_node_t **)malloc(new_size * sizeof(hash_table_node_t *));
@@ -206,26 +208,27 @@ static void hash_table_grow(hash_table_t *hash_table)
   }
 
   // Initialize all the linked lists in the new hash table to empty
-  for(i = 0; i < new_size; i++)
+  for(i = 0u; i < new_size; i++)
     new_heads[i] = NULL;
 
   // Rehash all the nodes in the old hash table
   for(i = 0u;i < hash_table->hash_table_size;i++)
-    for(node = hash_table->heads[i];node != NULL;node = next_node)
+    for(node = hash_table->heads[i];node != NULL;node = node->next) // ou node = next_node?
     {
       next_node = node->next;
       // Compute the new hash value for this node
-      unsigned int hash_value = crc32(node->word) % new_size;
+      hash_value = crc32(node->word) % new_size;
       // Add the node to the linked list of the corresponding bucket in the new hash table
       node->next = new_heads[hash_value];
       new_heads[hash_value] = node;
       node = next_node;
     }
-
   // Free the old array of heads and update the size and heads fields of the hash table structure
   free(hash_table->heads);
   hash_table->hash_table_size = new_size;
   hash_table->heads = new_heads;
+
+  printf("Hash table resized (new size: %d, entries: %d)\n",new_size,hash_table->number_of_entries);
 }
 
 
@@ -255,6 +258,8 @@ static void hash_table_free(hash_table_t *hash_table)
   // Free the array of heads and the hash table structure
   free(hash_table->heads);
   free(hash_table);
+  
+  printf("Hash table destroyed\n");
 }
 
 // static hash_table_node_t *find_word(hash_table_t *hash_table,const char *word,int insert_if_not_found)
@@ -314,6 +319,8 @@ static hash_table_node_t *find_word(hash_table_t *hash_table, const char *word, 
 
   if (insert_if_not_found == 1) // Should the word be inserted if it was not found?
   {
+    if (hash_table->number_of_entries == hash_table->hash_table_size * 2)
+      hash_table_grow(hash_table);
     // Allocate a new node and insert it at the beginning of the linked list
     node = allocate_hash_table_node();
     strcpy(node->word, word);
@@ -328,9 +335,7 @@ static hash_table_node_t *find_word(hash_table_t *hash_table, const char *word, 
     hash_table->number_of_entries++;
   }
   else
-  {
     node = NULL; // The word was not found and should not be inserted
-  }
 
   return node;
 }
@@ -837,8 +842,8 @@ static void graph_info(hash_table_t *hash_table)
   printf("Number of vertices: %d\n", number_of_vertices);
   printf("Number of edges: %d\n", number_of_edges);
   printf("Number of connected components: %d\n", number_of_connected_components);
-  printf("Maximum number of vertices in connected component: %d\n", max_number_of_vertices_in_connected_component);
-  printf("Maximum number of edges in connected component: %d\n", max_number_of_edges_in_connected_component);
+  printf("at most %d vertices in a connected component\n", max_number_of_vertices_in_connected_component);
+  printf("at most %d edges in a connected component\n", max_number_of_edges_in_connected_component);
 
   // int i, num_vertices = 0, num_edges = 0, num_components = 0;
   // int max_vertices = 0, max_edges = 0, num_diameter_components = 0;
