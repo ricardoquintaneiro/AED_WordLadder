@@ -190,7 +190,7 @@ static hash_table_t *hash_table_create(void)                         // CHECKED
   return hash_table;
 }
 
-static void hash_table_grow(hash_table_t *hash_table) // MUDAR O NOME DO HASH_VALUE?
+static void hash_table_grow(hash_table_t *hash_table) // UNCHECKED, MUDAR O NOME DO HASH_VALUE?
 {
   unsigned int i, new_size, hash_value;
   hash_table_node_t *node, *next_node;
