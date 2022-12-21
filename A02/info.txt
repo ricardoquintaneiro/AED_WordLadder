@@ -1,5 +1,5 @@
 Constrói a hash table:
-  No principio as heads estão todas a NULL#
+  No principio as heads estão todas a NULL
 
   No hash_table_grow, o prof disse que só aumentar quando as entries
 	são o dobro é exagerado, talvez 70% ou 80%
