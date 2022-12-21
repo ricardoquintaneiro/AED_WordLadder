@@ -467,7 +467,7 @@ static int breadh_first_search(int maximum_number_of_vertices,hash_table_node_t 
 {
   // USAR UMA FILA (QUEUE) COM UM ARRAY
   // para o tamanho usar o numero de vertices (do componente conexo)
-int r, w = 1;
+  int r, w = 1;
   if (origin->representative != goal->representative)
     return -1;
   for (int i = 0; i < maximum_number_of_vertices; i++)
@@ -529,7 +529,7 @@ static void list_connected_component(hash_table_t *hash_table,const char *word)
 
   // Allocate an array to store the list of vertices in the connected component
   unsigned int i;
-  int maximum_number_of_vertices = origin->representative->number_of_vertices + 1;
+  int maximum_number_of_vertices = origin->representative->number_of_vertices;
   hash_table_node_t **vertices = (hash_table_node_t **)malloc(maximum_number_of_vertices * sizeof(hash_table_node_t *));
   if (vertices == NULL)
   {
@@ -548,12 +548,13 @@ static void list_connected_component(hash_table_t *hash_table,const char *word)
     printf("%s\n", vertices[i]->word);
 
   // Free the array and reset the visited and previous fields of the vertices
-  free(vertices);
   for (i = 0u; i < number_of_vertices; i++)
   {
     vertices[i]->visited = 0;
     vertices[i]->previous = NULL;
   }
+  free(vertices);
+
 }
 
 //
@@ -566,6 +567,7 @@ static hash_table_node_t **largest_diameter_example;
 static int connected_component_diameter(hash_table_node_t *node)
 {
   int diameter = 0;
+  largest_diameter = 0;
   int maximum_number_of_vertices = node->representative->number_of_edges;
   hash_table_node_t **vertices = (hash_table_node_t **)malloc(maximum_number_of_vertices * sizeof(hash_table_node_t *));
 
@@ -582,21 +584,37 @@ static int connected_component_diameter(hash_table_node_t *node)
     // There was an error in the search
     diameter = -1;
   }
+  
   else
   {
     // Calculate the diameter of the connected component
     for (int i = 0; i < number_of_vertices; i++)
     {
+      diameter = 0;
       int distance = breadh_first_search(maximum_number_of_vertices, vertices, vertices[i], NULL);
-      if (distance > diameter)
+      while(vertices[distance-1]->previous != NULL)
       {
-        diameter = distance;
+        vertices[distance-1] = vertices[distance-1]->previous;
+        diameter++;
+      }
+      if (diameter > largest_diameter)
+      {
+        largest_diameter = diameter;
+      }
+      for (int j = 0; j < distance; j++)
+      {
+        vertices[j]->visited = 0;
+        vertices[j]->previous = NULL;
       }
     }
   }
-
+  for (int i = 0; i < number_of_vertices; i++)
+  {
+    vertices[i]->visited = 0;
+    vertices[i]->previous = NULL;
+  }
   free(vertices);
-  return diameter;
+  return largest_diameter;
 }
 
 //
@@ -606,8 +624,8 @@ static int connected_component_diameter(hash_table_node_t *node)
 static void path_finder(hash_table_t *hash_table,const char *from_word,const char *to_word)
 {
   hash_table_node_t *origin, *goal;
-  origin = find_word(hash_table, from_word, 0);
-  goal = find_word(hash_table, to_word, 0);
+  origin = find_word(hash_table, to_word, 0);
+  goal = find_word(hash_table, from_word, 0);
 
   if (origin == NULL || goal == NULL)
   {
@@ -644,6 +662,7 @@ static void path_finder(hash_table_t *hash_table,const char *from_word,const cha
   }
   else
   {
+    printf("\n");
     // Print the shortest path
     while (goal != origin)
     {
@@ -653,13 +672,15 @@ static void path_finder(hash_table_t *hash_table,const char *from_word,const cha
     printf("%s\n", origin->word);
   }
 
-  for (i = 0; i < maximum_number_of_vertices; i++)
+  for (i = 0; i < number_of_vertices; i++)
   {
     vertices[i]->visited = 0;
     vertices[i]->previous = NULL;
   }
 
   free(vertices);
+
+  printf("Diameter: %d\n",connected_component_diameter(origin));
 }
 
 

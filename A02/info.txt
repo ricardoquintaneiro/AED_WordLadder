@@ -60,15 +60,11 @@ Para saber o nº de componentes conexos:
 
 Para o diâmetro:
 
-	Usar ou não usar o breadh first search mas implementar uma coisa parecida?
-	Acho que é para usar, com goal a NULL para ele percorrer tudo.
+	breadh_first_search, com goal a NULL para ele percorrer tudo.
 	Percorrer o cc todo para encontrar o vértice mais longe (com mais arestas)
-	O diâmetro é o número de arestas até esse(s) vértice(s).	
-	Fazer isto para cada palavra do cc, o resultado é o maior.
-	
-	Alternativa:
-	fazer um Dijsktra com as arestas todas a 1, ou seja, expandir a partir
-		dos vértices com menor custo. (queue?)
+	O diâmetro é o número de arestas até esse(s) vértice(s).
+	Fazer isto para cada palavra do cc, o largest_diameter é o maior.
+
 
 Para listar o componente conexo (opção 1):
 
