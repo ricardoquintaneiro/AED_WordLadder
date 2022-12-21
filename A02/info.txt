@@ -1,0 +1,94 @@
+Constrói a hash table:
+  No principio as heads estão todas a NULL
+
+  No hash_table_grow, o prof disse que só aumentar quando as entries
+	são o dobro é exagerado, talvez 70% ou 80%
+	Usar as duas linhas acima da chamada de similar_words na main
+	Inserir direto (ver foto para detalhes), nem é preciso libertar
+		o ponteiro ao contrário que se chamasse o find_word
+
+  No find word, inicializar o resto, porque ainda não há edges:
+	head a null
+	visited 0
+	previous null
+	representative é o próprio
+
+Constrói o grafo:
+  Chama similar words que chama add_edge.
+
+  A função add_edge vai ter de fazer um find_word para ver se
+	a new_word está na hash table (SEM INSERÇÃO!)
+  Se new_word estiver na hash table tem de criar 2 arestas, uma
+	para cada lado
+  
+  A função find_representative está nos slides, é só adaptar!
+	O ponteiro do representative aponta para ele próprio
+	São feitas duas passagens:
+		a primeira vez encontra o representante (nó a nó)
+		a segunda faz apontar tudo para ele
+  
+  No add_edge os dois vértices têm de passar a estar no mesmo
+	componente conexo, para isso um representante passa a 
+	apontar para o outro, se não for o mesmo,
+	e tem de adicionar os números de vértices de cada um
+	(dúvida, apontar o menor para o maior?)
+
+  Também é preciso aumentar o number_of_edges
+
+
+Para saber se há caminho de uma palavra para a outra:
+
+	Primeiro ver se o representante é o mesmo (c. conexo),
+		se não então NÃO HÁ caminho.
+	Depois, fazer o breadth first search, queue com array de
+		tamanho igual ao número de vértices do cc.
+	Tentar usar o head?, visited e previous no breadh-first search
+	A posição 0 do array tem o from.
+	Há um indice de leitura (r=0) e outro de escrita (w=1).
+	Enquanto os indices forem diferentes, ainda está algo na fila.
+	Para tirar um node da fila, r++, visited=1, adicionar os v. adjac.
+		que ainda não foram visitados ao array, visited=1
+		para eles, meter o previous a apontar para o vértice,
+		se um dos vértices for o to, já está feito
+	No fim, meter todos os visited a 0 (e os previous?)
+  
+  
+Para saber o nº de componentes conexos:
+
+	Percorrer o hash table todo, com aqueles 2 for da main:
+		Se o representante de um nó for ele próprio, n++
+
+Para o diâmetro:
+
+	Usar ou não usar o breadh first search mas implementar uma coisa parecida?
+	Acho que é para usar, com goal a NULL para ele percorrer tudo.
+	Percorrer o cc todo para encontrar o vértice mais longe (com mais arestas)
+	O diâmetro é o número de arestas até esse(s) vértice(s).	
+	Fazer isto para cada palavra do cc, o resultado é o maior.
+	
+	Alternativa:
+	fazer um Dijsktra com as arestas todas a 1, ou seja, expandir a partir
+		dos vértices com menor custo. (queue?)
+
+Para listar o componente conexo (opção 1):
+
+	Usar o breadth first search com goal a NULL
+	Usar uma função do tipo find??
+
+
+
+Estatística para o relatório (ou graph info):
+
+	Dizer em média quantos vértices existem em cada entrada da hash_table,
+		num_vertices/size
+	Fazer um histograma para saber a distribuição dos vértices para cada
+		entrada, para isso, percorrer cada indice e contar o nº de nós de cada
+	Sugestão do prof: que tipo de distribuição é que se tem? (MPEI stuff)
+
+	Usar o nº de vértices de cada componente conexo para fazer um histograma,
+	onde se lista para cada nº de vértices quantos ccs é que há
+
+	Fazer um histograma igual ao do terminal (diâmetros)
+
+	
+Encontrar pares de palavras engraçados para a segunda opção
