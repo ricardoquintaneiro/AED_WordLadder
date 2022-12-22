@@ -586,6 +586,16 @@ static int connected_component_diameter(hash_table_node_t *node)
   {
     vertices[i] = NULL;
   }
+  hash_table_node_t **diameter_array = (hash_table_node_t **)malloc(maximum_number_of_vertices * sizeof(hash_table_node_t *));
+  if (diameter_array == NULL)
+  {
+    fprintf(stderr, "connected_component_diameter: out of memory\n");
+    exit(1);
+  }
+  for (i = 0; i < maximum_number_of_vertices; i++)
+  {
+    diameter_array[i] = NULL;
+  }
   // Find the list of vertices in the connected component
   int number_of_vertices;
   number_of_vertices = breadh_first_search(maximum_number_of_vertices, vertices, node, node);
@@ -597,16 +607,23 @@ static int connected_component_diameter(hash_table_node_t *node)
   }
   number_of_vertices = breadh_first_search(maximum_number_of_vertices, vertices, last_first_search, last_first_search);
   hash_table_node_t* last_second_search = vertices[number_of_vertices - 1];
-  for (i = 0; last_second_search != NULL; i++) {
-      printf("%d %d\n",i,number_of_vertices);
-      last_second_search = last_second_search->previous;
+  for (i = 0; last_second_search != NULL; i++){
+    diameter_array[i] = last_second_search;
+    last_second_search = last_second_search->previous;
   }
+  
   diameter = i - 1;
+  if (diameter > largest_diameter) {
+    largest_diameter = diameter;
+    largest_diameter_example = diameter_array;
+  }
+  
   for (i = 0; i < number_of_vertices; i++)
   {
     vertices[i]->visited = 0;
     vertices[i]->previous = NULL;
   }
+  free(diameter_array);
   free(vertices);
   return diameter;
 }
@@ -672,7 +689,6 @@ static void path_finder(hash_table_t *hash_table,const char *from_word,const cha
 
   free(vertices);
 
-  printf("\nDiameter: %d\n",connected_component_diameter(origin));
 }
 
 
@@ -682,24 +698,31 @@ static void path_finder(hash_table_t *hash_table,const char *from_word,const cha
 
 static void graph_info(hash_table_t *hash_table)
 {
-  // para listar o nº de componentes conexos ver o nº de representativos diferentes
-
-  unsigned int i;
+  unsigned int i,j=0;
   hash_table_node_t *node;
-  int number_of_vertices = 0;
   int number_of_edges = 0;
   int number_of_connected_components = 0;
   int max_number_of_vertices_in_connected_component = 0;
   int max_number_of_edges_in_connected_component = 0;
+  hash_table_node_t **representatives = (hash_table_node_t **)malloc(hash_table->number_of_entries * sizeof(hash_table_node_t *));
+  if (representatives == NULL)
+  {
+    fprintf(stderr, "connected_component_diameter: out of memory\n");
+    exit(1);
+  }
+  for (i = 0u; i < hash_table->number_of_entries; i++)
+  {
+    representatives[i] = NULL;
+  }
   for (i = 0u; i < hash_table->hash_table_size; i++)
   {
     for (node = hash_table->heads[i]; node != NULL; node = node->next)
     {
-      number_of_vertices++;
       number_of_edges += node->number_of_edges;
       if (node->representative == node)
       {
         number_of_connected_components++;
+        representatives[j++] = node;
         if (node->number_of_vertices > max_number_of_vertices_in_connected_component)
           max_number_of_vertices_in_connected_component = node->number_of_vertices;
         if (node->number_of_edges > max_number_of_edges_in_connected_component)
@@ -707,102 +730,34 @@ static void graph_info(hash_table_t *hash_table)
       }
     }
   }
-  printf("%d vertices should be equal to %d\n", number_of_vertices, hash_table->number_of_entries);
+  printf("%d vertices\n", hash_table->number_of_entries);
   printf("%d edges should be equal to %d\n", number_of_edges, hash_table->number_of_edges);
   printf("%d connected components\n", number_of_connected_components);
   printf("at most %d vertices in a connected component\n", max_number_of_vertices_in_connected_component);
   printf("at most %d edges in a connected component\n", max_number_of_edges_in_connected_component);
 
-  // int i, num_vertices = 0, num_edges = 0, num_components = 0;
-  // int max_vertices = 0, max_edges = 0, num_diameter_components = 0;
-  // hash_table_node_t *node;
+  int diameters[number_of_connected_components];
+  for (i = 0; representatives[i] != NULL; i++) {
+    diameters[i] = connected_component_diameter(representatives[i]);
+  }
 
-  // for (i = 0; i < hash_table->hash_table_size; i++)
-  // {
-  //   for (node = hash_table->heads[i]; node != NULL; node = node->next)
-  //   {
-  //     // Count the number of vertices and edges
-  //     num_vertices++;
-  //     num_edges += node->number_of_edges;
+  int *counts = (int *)calloc(largest_diameter + 1,sizeof(int));
+  for (i = 0; i < number_of_connected_components; i++) {
+    counts[diameters[i]]++;
+  }
+  for (i = 0; i < largest_diameter + 1; i++) {
+    if (counts[i] > 0) {
+      printf("  %d; %d\n",i,counts[i]);
+    }
+  }
+  printf("\nlargest word ladder:\n");
 
-  //     // Update the maximum number of vertices and edges in a connected component
-  //     if (node->number_of_vertices > max_vertices)
-  //       max_vertices = node->number_of_vertices;
-  //     if (node->number_of_edges > max_edges)
-  //       max_edges = node->number_of_edges;
-
-  //     // Check if this node is part of a connected component with the same diameter as the largest diameter found so far
-  //     if (node->number_of_vertices == largest_diameter_example[0]->number_of_vertices)
-  //       num_diameter_components++;
-  //   }
-  // }
-
-  // // Print the number of vertices, edges, and connected components
-  // printf("Number of vertices: %d\n", num_vertices);
-  // printf("Number of edges: %d\n", num_edges);
-  // printf("Number of connected components: %d\n", num_components);
-
-  // // Print the maximum number of vertices and edges in a connected component
-  // printf("Maximum number of vertices in a connected component: %d\n", max_vertices);
-  // printf("Maximum number of edges in a connected component: %d\n", max_edges);
-
-  // // Print the number of connected components with the same diameter as the largest diameter found so far
-  // printf("Number of connected components with the same diameter as the largest: %d\n", num_diameter_components);
-
-  // // Print the largest word ladder
-  // printf("Largest word ladder:\n");
-  // for (i = 0; i < largest_diameter; i++)
-  //   printf("%s\n", largest_diameter_example[i]->word);
-
-  // unsigned int i, num_vertices = 0, num_edges = 0, num_connected_components = 0;
-  // int max_vertices = 0, max_edges = 0, diameter_count = 0;
-  // hash_table_node_t *node;
-
-  // // Iterate over all the nodes in the hash table
-  // for (i = 0; i < hash_table->hash_table_size; i++)
-  // {
-  //   for (node = hash_table->heads[i]; node != NULL; node = node->next)
-  //   {
-  //     // If the node has not been visited yet, it is part of a new connected component
-  //     if (!node->visited)
-  //     {
-  //       num_connected_components++;
-  //       num_vertices++;
-  //       // Breadth-first search to visit all the nodes in the connected component
-  //       num_vertices += breadth_first_search(hash_table->number_of_entries, &node, node, NULL);
-  //       // Update the maximum number of vertices in a connected component if necessary
-  //       if (num_vertices > max_vertices)
-  //         max_vertices = num_vertices;
-  //       // Reset the number of vertices for the next connected component
-  //       num_vertices = 0;
-  //       // Update the maximum number of edges in a connected component if necessary
-  //       if (node->number_of_edges > max_edges)
-  //         max_edges = node->number_of_edges;
-  //       // Update the count of connected components with the same diameter if necessary
-  //       if (node->largest_diameter == largest_diameter)
-  //         diameter_count++;
-  //     }
-  //     else
-  //     {
-  //       num_vertices++;
-  //       num_edges += node->number_of_edges;
-  //     }
-  //   }
-
-  // // Print the number of vertices, edges, and connected components
-  // printf("Number of vertices: %u\n", num_vertices);
-  // printf("Number of edges: %u\n", num_edges);
-  // printf("Number of connected components: %u\n", num_connected_components);
-  // // Print the maximum number of vertices and edges in a connected component
-  // printf("Maximum number of vertices in a connected component: %d\n", max_vertices);
-  // printf("Maximum number of edges in a connected component: %d\n", max_edges);
-  // // Print the number of connected components with the same diameter as the largest one
-  // printf("Number of connected components with the largest diameter: %d\n", diameter_count);
-  // // Print the largest word ladder
-  // printf("Largest word ladder: %s\n", largest_diameter_example[0]->word);
-  // for (i = 1; i < largest_diameter; i++)
-  //   printf(" -> %s", largest_diameter_example[i]->word);
-  // printf("\n");
+  for (i = 0; i < largest_diameter + 1; i++) {
+      printf(" [%3d] %s\n", i, largest_diameter_example[i]->word);
+    }
+    printf("\n");
+  free(representatives);
+  free(counts);
 }
 
 
