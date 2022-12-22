@@ -319,36 +319,41 @@ static hash_table_node_t *find_representative(hash_table_node_t *node)  // CHECK
     next_node = node->representative;
     node->representative = representative;
   }
+  // while (node->representative != representative)
+  // {
+  //   hash_table_node_t *next = node->representative;    check codigo alex
+  //   node->representative = representative;
+  //   node = next;
+  // }
   return representative;
 }
 
 static void add_edge(hash_table_t *hash_table,hash_table_node_t *from,const char *word) // CHECKED BUT CHECK AGAIN, 2 EDGES DOUBTS
 {
   hash_table_node_t *to,*from_representative,*to_representative;
-  adjacency_node_t *link1, *link2;
+  adjacency_node_t *link;
 
   to = find_word(hash_table,word,0);
 
-  // SE A PALAVRA NÃO ESTIVER NA HASH TABLE NÃO ACONTECE NADA
-  // SE A PALAVRA EXISTIR, CRIAR 2 ARESTAS, UMA PARA CADA LADO?
   if (to != NULL)
   {
     // Allocate a new adjacency node
-    link1 = allocate_adjacency_node();          // VER SE DÁ PARA FAZER SÓ COM UM LINK
-    link1->next = from->head;
-    link1->vertex = to;
-    from->head = link1;
+    link = allocate_adjacency_node();
+    link->next = from->head;
+    link->vertex = to;
+    from->head = link;
 
-    link2 = allocate_adjacency_node();
-    link2->next = to->head;
-    link2->vertex = from;
-    to->head = link2;
+    link = allocate_adjacency_node();
+    link->next = to->head;
+    link->vertex = from;
+    to->head = link;
 
-    hash_table->number_of_edges += 2;
+    hash_table->number_of_edges += 1;
 
     // Find the representatives of the connected components
     from_representative = find_representative(from);
     to_representative = find_representative(to);
+    
 
     // Check if the vertices belong to different connected components
     if (from_representative != to_representative)
@@ -359,15 +364,18 @@ static void add_edge(hash_table_t *hash_table,hash_table_node_t *from,const char
         // The from_representative connected component has fewer vertices, so it becomes part of the to_representative connected component
         from_representative->representative = to_representative;
         to_representative->number_of_vertices += from_representative->number_of_vertices;
-        to_representative->number_of_edges += from_representative->number_of_edges + 2;
+        to_representative->number_of_edges += from_representative->number_of_edges + 1;
       }
       else
       {
         // The to_representative connected component has fewer vertices, so it becomes part of the from_representative connected component
         to_representative->representative = from_representative;
         from_representative->number_of_vertices += to_representative->number_of_vertices;
-        from_representative->number_of_edges += to_representative->number_of_edges + 2;
+        from_representative->number_of_edges += to_representative->number_of_edges + 1;
       }
+    }
+    else {
+      from_representative->number_of_edges += 1;
     }
   }
 }
@@ -543,10 +551,10 @@ static void list_connected_component(hash_table_t *hash_table,const char *word)
   int number_of_vertices = breadh_first_search(maximum_number_of_vertices, vertices, representative, representative);
 
   // Print the list of vertices
-  printf("Vertices in connected component:\n");
+  printf("\nVertices in connected component:\n");
   for (i = 0u; i < number_of_vertices; i++)
     printf("%s\n", vertices[i]->word);
-
+  printf("\n");
   // Free the array and reset the visited and previous fields of the vertices
   for (i = 0u; i < number_of_vertices; i++)
   {
@@ -566,55 +574,41 @@ static hash_table_node_t **largest_diameter_example;
 
 static int connected_component_diameter(hash_table_node_t *node)
 {
-  int diameter = 0;
-  largest_diameter = 0;
-  int maximum_number_of_vertices = node->representative->number_of_edges;
+  int i, diameter = 0;
+  int maximum_number_of_vertices = node->representative->number_of_vertices;
   hash_table_node_t **vertices = (hash_table_node_t **)malloc(maximum_number_of_vertices * sizeof(hash_table_node_t *));
-
   if (vertices == NULL)
   {
     fprintf(stderr, "connected_component_diameter: out of memory\n");
     exit(1);
   }
-
+  for (i = 0; i < maximum_number_of_vertices; i++)
+  {
+    vertices[i] = NULL;
+  }
   // Find the list of vertices in the connected component
-  int number_of_vertices = breadh_first_search(maximum_number_of_vertices, vertices, node, NULL);
-  if (number_of_vertices == -1)
+  int number_of_vertices;
+  number_of_vertices = breadh_first_search(maximum_number_of_vertices, vertices, node, node);
+  hash_table_node_t* last_first_search = vertices[number_of_vertices - 1];
+  for (i = 0; i < number_of_vertices; i++)
   {
-    // There was an error in the search
-    diameter = -1;
+    vertices[i]->visited = 0;
+    vertices[i]->previous = NULL;
   }
-  
-  else
-  {
-    // Calculate the diameter of the connected component
-    for (int i = 0; i < number_of_vertices; i++)
-    {
-      diameter = 0;
-      int distance = breadh_first_search(maximum_number_of_vertices, vertices, vertices[i], NULL);
-      while(vertices[distance-1]->previous != NULL)
-      {
-        vertices[distance-1] = vertices[distance-1]->previous;
-        diameter++;
-      }
-      if (diameter > largest_diameter)
-      {
-        largest_diameter = diameter;
-      }
-      for (int j = 0; j < distance; j++)
-      {
-        vertices[j]->visited = 0;
-        vertices[j]->previous = NULL;
-      }
-    }
+  number_of_vertices = breadh_first_search(maximum_number_of_vertices, vertices, last_first_search, last_first_search);
+  hash_table_node_t* last_second_search = vertices[number_of_vertices - 1];
+  for (i = 0; last_second_search != NULL; i++) {
+      printf("%d %d\n",i,number_of_vertices);
+      last_second_search = last_second_search->previous;
   }
-  for (int i = 0; i < number_of_vertices; i++)
+  diameter = i - 1;
+  for (i = 0; i < number_of_vertices; i++)
   {
     vertices[i]->visited = 0;
     vertices[i]->previous = NULL;
   }
   free(vertices);
-  return largest_diameter;
+  return diameter;
 }
 
 //
@@ -641,7 +635,7 @@ static void path_finder(hash_table_t *hash_table,const char *from_word,const cha
 
   int i, number_of_vertices, maximum_number_of_vertices;
   hash_table_node_t **vertices;
-  maximum_number_of_vertices = origin->representative->number_of_vertices + 1;
+  maximum_number_of_vertices = origin->representative->number_of_vertices;
   // Allocate an array to store the list of vertices in the connected component
   vertices = (hash_table_node_t **)malloc(maximum_number_of_vertices * sizeof(hash_table_node_t *));
   if (vertices == NULL)
@@ -662,16 +656,14 @@ static void path_finder(hash_table_t *hash_table,const char *from_word,const cha
   }
   else
   {
-    printf("\n");
+    printf("\npath from %s to %s:\n",from_word,to_word);
     // Print the shortest path
-    while (goal != origin)
-    {
-      printf("%s\n", goal->word);
+    for (i = 0; goal != NULL; i++) {
+      printf(" [%3d] %s\n", i, goal->word);
       goal = goal->previous;
     }
-    printf("%s\n", origin->word);
+    printf("\n");
   }
-
   for (i = 0; i < number_of_vertices; i++)
   {
     vertices[i]->visited = 0;
@@ -680,7 +672,7 @@ static void path_finder(hash_table_t *hash_table,const char *from_word,const cha
 
   free(vertices);
 
-  printf("Diameter: %d\n",connected_component_diameter(origin));
+  printf("\nDiameter: %d\n",connected_component_diameter(origin));
 }
 
 
@@ -693,14 +685,14 @@ static void graph_info(hash_table_t *hash_table)
   // para listar o nº de componentes conexos ver o nº de representativos diferentes
 
   unsigned int i;
+  hash_table_node_t *node;
   int number_of_vertices = 0;
   int number_of_edges = 0;
   int number_of_connected_components = 0;
   int max_number_of_vertices_in_connected_component = 0;
   int max_number_of_edges_in_connected_component = 0;
-  for (unsigned int i = 0; i < hash_table->hash_table_size; i++)
+  for (i = 0u; i < hash_table->hash_table_size; i++)
   {
-    hash_table_node_t *node;
     for (node = hash_table->heads[i]; node != NULL; node = node->next)
     {
       number_of_vertices++;
@@ -715,9 +707,9 @@ static void graph_info(hash_table_t *hash_table)
       }
     }
   }
-  printf("Number of vertices: %d\n", number_of_vertices);
-  printf("Number of edges: %d\n", number_of_edges);
-  printf("Number of connected components: %d\n", number_of_connected_components);
+  printf("%d vertices should be equal to %d\n", number_of_vertices, hash_table->number_of_entries);
+  printf("%d edges should be equal to %d\n", number_of_edges, hash_table->number_of_edges);
+  printf("%d connected components\n", number_of_connected_components);
   printf("at most %d vertices in a connected component\n", max_number_of_vertices_in_connected_component);
   printf("at most %d edges in a connected component\n", max_number_of_edges_in_connected_component);
 
