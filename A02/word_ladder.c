@@ -707,7 +707,7 @@ static void graph_info(hash_table_t *hash_table)
   hash_table_node_t **representatives = (hash_table_node_t **)malloc(hash_table->number_of_entries * sizeof(hash_table_node_t *));
   if (representatives == NULL)
   {
-    fprintf(stderr, "connected_component_diameter: out of memory\n");
+    fprintf(stderr, "graph_info: out of memory\n");
     exit(1);
   }
   for (i = 0u; i < hash_table->number_of_entries; i++)
