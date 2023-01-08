@@ -1,0 +1,50 @@
+Hash table created (size: 1000000)
+7166 vertices
+23446 edges should be equal to 23446
+575 connected components
+at most 6321 vertices in a connected component
+at most 23063 edges in a connected component  
+  0; 454
+  1; 84
+  2; 24
+  3; 8
+  4; 2
+  5; 1
+  6; 1
+  33; 1
+
+largest word ladder:
+ [  0] fo-lo
+ [  1] fá-lo
+ [  2] dá-lo
+ [  3] dê-lo
+ [  4] vê-lo
+ [  5] vi-lo
+ [  6] vi-la
+ [  7] viela
+ [  8] viera
+ [  9] vibra
+ [ 10] fibra
+ [ 11] fiara
+ [ 12] fiava
+ [ 13] flava
+ [ 14] alava
+ [ 15] atava
+ [ 16] ativa
+ [ 17] atira
+ [ 18] afira
+ [ 19] afila
+ [ 20] axila
+ [ 21] exila
+ [ 22] exala
+ [ 23] exara
+ [ 24] extra
+ [ 25] entra
+ [ 26] entro
+ [ 27] então
+ [ 28] estão
+ [ 29] estio
+ [ 30] espio
+ [ 31] espie
+ [ 32] expie
+ [ 33] expõe

@@ -1,0 +1,76 @@
+Hash table created (size: 1000000)
+15654 vertices
+36204 edges should be equal to 36204
+1929 connected components
+at most 11613 vertices in a connected component
+at most 32955 edges in a connected component
+  0; 1204
+  1; 440
+  2; 169
+  3; 63
+  4; 29
+  5; 10
+  6; 5
+  7; 6
+  10; 2
+  57; 1
+
+largest word ladder:
+ [  0] enruga
+ [  1] enxuga
+ [  2] enxuta
+ [  3] enluta
+ [  4] enlata
+ [  5] engata
+ [  6] engana
+ [  7] encana
+ [  8] encena
+ [  9] enceta
+ [ 10] enceto
+ [ 11] exceto
+ [ 12] expeto
+ [ 13] espeto
+ [ 14] aspeto
+ [ 15] asseto
+ [ 16] assedo
+ [ 17] assado
+ [ 18] assada
+ [ 19] ossada
+ [ 20] ousada
+ [ 21] ourada
+ [ 22] curada
+ [ 23] corada
+ [ 24] cotada
+ [ 25] cotava
+ [ 26] citava
+ [ 27] oitava
+ [ 28] optava
+ [ 29] opiava
+ [ 30] odiava
+ [ 31] adiava
+ [ 32] adiada
+ [ 33] adiado
+ [ 34] adindo
+ [ 35] alindo
+ [ 36] alando
+ [ 37] amando
+ [ 38] amanso
+ [ 39] amanse
+ [ 40] amasse
+ [ 41] alasse
+ [ 42] classe
+ [ 43] coasse
+ [ 44] doasse
+ [ 45] doa-se
+ [ 46] dou-se
+ [ 47] vou-se
+ [ 48] viu-se
+ [ 49] vir-se
+ [ 50] virose
+ [ 51] viroso
+ [ 52] piroso
+ [ 53] piloso
+ [ 54] piloto
+ [ 55] pilote
+ [ 56] pelote
+ [ 57] zelote
