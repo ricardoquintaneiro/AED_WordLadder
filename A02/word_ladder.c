@@ -172,7 +172,7 @@ static hash_table_t *hash_table_create(void)                         // CHECKED
     fprintf(stderr,"create_hash_table: out of memory\n");
     exit(1);
   }
-  hash_table->hash_table_size = 100;
+  hash_table->hash_table_size = 1024;
   hash_table->number_of_edges = 0;
   hash_table->number_of_entries = 0;
   hash_table->heads = (hash_table_node_t **)malloc(hash_table->hash_table_size * sizeof(hash_table_node_t *));
@@ -466,13 +466,18 @@ static int breadh_first_search(int maximum_number_of_vertices,hash_table_node_t 
   origin->visited = 1;
   origin->previous = NULL;
 
+  hash_table_node_t *current_node;
+  adjacency_node_t *neighbor;
+  hash_table_node_t *neighbor_node;
+
   for (r = 0; r < w; r++)
   {
-    hash_table_node_t *current_node = list_of_vertices[r];
-    adjacency_node_t *neighbor = current_node->head;
+    current_node = list_of_vertices[r];
+    neighbor = current_node->head;
     while (neighbor != NULL)
     {
-      hash_table_node_t *neighbor_node = neighbor->vertex;
+      if (goal!=origin && goal->visited == 1) break;
+      neighbor_node = neighbor->vertex;
       if (neighbor_node->visited == 0)
       {
         list_of_vertices[w++] = neighbor_node;
@@ -481,6 +486,7 @@ static int breadh_first_search(int maximum_number_of_vertices,hash_table_node_t 
       }
       neighbor = neighbor->next;
     }
+    
   }
 
   if (goal->visited == 1) {
@@ -588,10 +594,10 @@ static int connected_component_diameter(hash_table_node_t *node) {
   }
 
   // Initialize distance matrix
-  int **distances = (int **)malloc(number_of_vertices * sizeof(int *));
-  for (i = 0; i < number_of_vertices; i++) {
-    distances[i] = (int *)malloc(number_of_vertices * sizeof(int));
-  }
+  // int **distances = (int **)malloc(number_of_vertices * sizeof(int *));
+  // for (i = 0; i < number_of_vertices; i++) {
+  //   distances[i] = (int *)malloc(number_of_vertices * sizeof(int));
+  // }
   int distance_x = -1;
   int distance_y = -1;
   // printf("%s %s = %s",all_vertices[0]->representative->word,all_vertices[280]->representative->word,node->word);
@@ -603,10 +609,10 @@ static int connected_component_diameter(hash_table_node_t *node) {
     for (j = i + 1; j < number_of_vertices; j++) {
       visited = breadh_first_search(maximum_number_of_vertices, vertices, all_vertices[i], all_vertices[j]);
       temp = all_vertices[j];
-      if (strcmp(all_vertices[i]->word,"ecoa")==0)
-      {
-        printf("%s %s = %s",all_vertices[i]->word,all_vertices[j]->word,node->word);
-      }
+      // if (strcmp(all_vertices[i]->word,"ecoa")==0)
+      // {
+      //   printf("%s %s = %s",all_vertices[i]->word,all_vertices[j]->word,node->word);
+      // }
       
       for (k = 0; temp != NULL; k++) {
         // temp = vertices[j];
@@ -616,13 +622,14 @@ static int connected_component_diameter(hash_table_node_t *node) {
       }
       all_vertices[j]->visited=0;
       all_vertices[j]->previous=NULL;
-      distances[i][j] = k - 1;
-      if (distances[i][j] > diameter) {
+      // distances[i][j] = k - 1;
+      if (k - 1 > diameter) {
         distance_x = i;
         distance_y = j;
-        diameter = distances[i][j];
+        // diameter = distances[i][j];
+        diameter = k - 1;
       }
-      for (k = 0; k < maximum_number_of_vertices; k++) { // after it's working change to ->visited<- to optimize
+      for (k = 0; k < number_of_vertices; k++) { // after it's working change to ->visited<- to optimize
         if (vertices[k] != NULL) {
           vertices[k]->visited = 0;
           vertices[k]->previous = NULL;
@@ -630,11 +637,11 @@ static int connected_component_diameter(hash_table_node_t *node) {
       }
     }
   }
-
+  // printf("%s ------ %s\n",all_vertices[distance_x]->word,all_vertices[distance_y]->word);
   breadh_first_search(maximum_number_of_vertices,vertices,all_vertices[distance_x],all_vertices[distance_y]);
-  for (i = 0; vertices[distance_y] != NULL; i++) {
-    diameter_array[i] = vertices[distance_y];
-    vertices[distance_y] = vertices[distance_y]->previous;
+  for (i = 0; all_vertices[distance_y]->previous != NULL; i++) {
+    diameter_array[i] = all_vertices[distance_y];
+    all_vertices[distance_y] = all_vertices[distance_y]->previous;
   }
   diameter_array[i] = all_vertices[distance_x];
   // diameter = i - 1;  
@@ -655,6 +662,10 @@ static int connected_component_diameter(hash_table_node_t *node) {
     all_vertices[i]->visited = 0;
     all_vertices[i]->previous = NULL;
   }
+  // for (i = 0; i < number_of_vertices; i++) {
+  //   free(distances[i]);
+  // }
+  // free(distances);
   free(all_vertices);
   free(vertices);
   free(diameter_array);
