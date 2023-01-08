@@ -172,7 +172,7 @@ static hash_table_t *hash_table_create(void)                         // CHECKED
     fprintf(stderr,"create_hash_table: out of memory\n");
     exit(1);
   }
-  hash_table->hash_table_size = 1024;
+  hash_table->hash_table_size = 100;
   hash_table->number_of_edges = 0;
   hash_table->number_of_entries = 0;
   hash_table->heads = (hash_table_node_t **)malloc(hash_table->hash_table_size * sizeof(hash_table_node_t *));
@@ -307,10 +307,12 @@ static hash_table_node_t *find_representative(hash_table_node_t *node)  // CHECK
   }
   // while (node->representative != representative)
   // {
-  //   hash_table_node_t *next = node->representative;    check codigo alex
+  //   hash_table_node_t *next = node->representative;
   //   node->representative = representative;
   //   node = next;
   // }
+  // if(strcmp(node->word,"Zeca") == 1)
+  //   printf("Zeca -> %s\n",representative);
   return representative;
 }
 
@@ -455,7 +457,7 @@ static int breadh_first_search(int maximum_number_of_vertices,hash_table_node_t 
   // USAR UMA FILA (QUEUE) COM UM ARRAY
   // para o tamanho usar o numero de vertices (do componente conexo)
   int r, w = 1;
-  if (origin->representative != goal->representative)
+  if (find_representative(origin) != find_representative(goal))
     return -1;
   for (int i = 0; i < maximum_number_of_vertices; i++)
     list_of_vertices[i] = NULL;
@@ -541,8 +543,24 @@ static int connected_component_diameter(hash_table_node_t *node) {
   // Initialize variables
   int i, j, k;
   int diameter = 0;
-  int maximum_number_of_vertices = node->representative->number_of_vertices;
+  hash_table_node_t *representative = find_representative(node);
+  int maximum_number_of_vertices = representative->number_of_vertices;
+  if (maximum_number_of_vertices == 1) {
+    return 0;
+  }
+  hash_table_node_t **all_vertices = (hash_table_node_t **)malloc(maximum_number_of_vertices * sizeof(hash_table_node_t *));
+  
+  if (all_vertices == NULL) {
+    fprintf(stderr, "connected_component_diameter: out of memory\n");
+    exit(1);
+  }
+  for (i = 0; i < maximum_number_of_vertices; i++) {
+    all_vertices[i] = NULL;
+  }
+
+
   hash_table_node_t **vertices = (hash_table_node_t **)malloc(maximum_number_of_vertices * sizeof(hash_table_node_t *));
+  
   if (vertices == NULL) {
     fprintf(stderr, "connected_component_diameter: out of memory\n");
     exit(1);
@@ -550,6 +568,7 @@ static int connected_component_diameter(hash_table_node_t *node) {
   for (i = 0; i < maximum_number_of_vertices; i++) {
     vertices[i] = NULL;
   }
+
   hash_table_node_t **diameter_array = (hash_table_node_t **)malloc(maximum_number_of_vertices * sizeof(hash_table_node_t *));
   if (diameter_array == NULL) {
     fprintf(stderr, "connected_component_diameter: out of memory\n");
@@ -560,57 +579,65 @@ static int connected_component_diameter(hash_table_node_t *node) {
   }
 
   // Find the list of vertices in the connected component
-  int number_of_vertices;
-  number_of_vertices = breadh_first_search(maximum_number_of_vertices, vertices, node, node);
+  int number_of_vertices = breadh_first_search(maximum_number_of_vertices, all_vertices, node, node);
+  for (i = 0; i < number_of_vertices; i++)
+  {
+    // find_representative(all_vertices[i]);
+    all_vertices[i]->visited = 0;
+    all_vertices[i]->previous = NULL;
+  }
 
   // Initialize distance matrix
   int **distances = (int **)malloc(number_of_vertices * sizeof(int *));
   for (i = 0; i < number_of_vertices; i++) {
     distances[i] = (int *)malloc(number_of_vertices * sizeof(int));
   }
-  for (i = 0; i < number_of_vertices; i++) {
-    for (j = 0; j < number_of_vertices; j++) {
-      if (i == j) {
-        distances[i][j] = 0;
-      } else {
-        distances[i][j] = maximum_number_of_vertices;
-      }
-    }
-  }
+  int distance_x = -1;
+  int distance_y = -1;
+  // printf("%s %s = %s",all_vertices[0]->representative->word,all_vertices[280]->representative->word,node->word);
 
   // Populate distance matrix
+  int visited = 0;
+  hash_table_node_t *temp;
   for (i = 0; i < number_of_vertices; i++) {
-    for (j = 0; j < vertices[i]->number_of_edges; j++) {
-      hash_table_node_t *neighbor = vertices[i]->representative;
-      for (k = 0; k < number_of_vertices; k++) {
-        if (vertices[k] == neighbor) {
-          distances[i][k] = 1;
-          break;
-        }
+    for (j = i + 1; j < number_of_vertices; j++) {
+      visited = breadh_first_search(maximum_number_of_vertices, vertices, all_vertices[i], all_vertices[j]);
+      temp = all_vertices[j];
+      if (strcmp(all_vertices[i]->word,"ecoa")==0)
+      {
+        printf("%s %s = %s",all_vertices[i]->word,all_vertices[j]->word,node->word);
       }
-    }
-  }
-
-  // Perform Floyd Warshall's Algorithm to find the diameter
-  for (k = 0; k < number_of_vertices; k++) {
-    for (i = 0; i < number_of_vertices; i++) {
-      for (j = 0; j < number_of_vertices; j++) {
-        if (distances[i][j] > distances[i][k] + distances[k][j]) {
-          distances[i][j] = distances[i][k] + distances[k][j];
-        }
+      
+      for (k = 0; temp != NULL; k++) {
+        // temp = vertices[j];
+        temp = temp->previous;
+        // temp->previous = NULL;
+        // temp->visited = 0;
       }
-    }
-  }
-
-  // Find the largest distance
-  for (i = 0; i < number_of_vertices; i++) {
-    for (j = 0; j < number_of_vertices; j++) {
+      all_vertices[j]->visited=0;
+      all_vertices[j]->previous=NULL;
+      distances[i][j] = k - 1;
       if (distances[i][j] > diameter) {
+        distance_x = i;
+        distance_y = j;
         diameter = distances[i][j];
       }
+      for (k = 0; k < maximum_number_of_vertices; k++) { // after it's working change to ->visited<- to optimize
+        if (vertices[k] != NULL) {
+          vertices[k]->visited = 0;
+          vertices[k]->previous = NULL;
+        }
+      }
     }
   }
 
+  breadh_first_search(maximum_number_of_vertices,vertices,all_vertices[distance_x],all_vertices[distance_y]);
+  for (i = 0; vertices[distance_y] != NULL; i++) {
+    diameter_array[i] = vertices[distance_y];
+    vertices[distance_y] = vertices[distance_y]->previous;
+  }
+  diameter_array[i] = all_vertices[distance_x];
+  // diameter = i - 1;  
   // Update global variables if necessary
   if (diameter > largest_diameter) {
     largest_diameter = diameter;
@@ -622,16 +649,13 @@ static int connected_component_diameter(hash_table_node_t *node) {
     }
   }
 
-  // Free memory and return diameter
-  for (i = 0; i < number_of_vertices; i++) {
-    free(distances[i]);
-  }
-  free(distances);
+
   for (i = 0; i < number_of_vertices; i++)
   {
-    vertices[i]->visited = 0;
-    vertices[i]->previous = NULL;
+    all_vertices[i]->visited = 0;
+    all_vertices[i]->previous = NULL;
   }
+  free(all_vertices);
   free(vertices);
   free(diameter_array);
   return diameter;
@@ -784,7 +808,7 @@ static void graph_info(hash_table_t *hash_table)
   {
     for (node = hash_table->heads[i]; node != NULL; node = node->next)
     {
-      if (node->representative == node)
+      if (find_representative(node) == node)
       {
         number_of_edges += node->number_of_edges;
         number_of_connected_components++;
@@ -802,6 +826,12 @@ static void graph_info(hash_table_t *hash_table)
   printf("at most %d vertices in a connected component\n", max_number_of_vertices_in_connected_component);
   printf("at most %d edges in a connected component\n", max_number_of_edges_in_connected_component);
 
+
+  // hash_table_node_t *one = find_word(hash_table,"bica",0);
+  // hash_table_node_t *two = find_word(hash_table,"Zeca",0);
+  // printf("%s --- %s\n",find_representative(one),find_representative(two));
+
+  
   int diameters[number_of_connected_components];
   for (i = 0; representatives[i] != NULL; i++) {
     diameters[i] = connected_component_diameter(representatives[i]);
