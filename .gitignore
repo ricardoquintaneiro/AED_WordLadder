@@ -56,3 +56,5 @@ dkms.conf
 
 A02/*.pdf
 A02/word_ladder
+.vscode/launch.json
+.vscode/tasks.json
