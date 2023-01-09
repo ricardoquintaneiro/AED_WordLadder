@@ -18,12 +18,12 @@
 //      *) find_representative
 //      *) add_edge
 //   3) RECOMMENDED: implement breadth-first search in the graph
-//      *) breadh_first_search
+//      *) breadth_first_search
 //   4) RECOMMENDED: list all words belonginh to a connected component
-//      *) breadh_first_search
+//      *) breadth_first_search
 //      *) list_connected_component
 //   5) RECOMMENDED: find the shortest path between to words
-//      *) breadh_first_search
+//      *) breadth_first_search
 //      *) path_finder
 //      *) test the smallest path from bem to mal
 //         [ 0] bem
@@ -34,7 +34,7 @@
 //         [ 5] mal
 //      *) find other interesting word ladders
 //   6) OPTIONAL: compute the diameter of a connected component and list the longest word chain
-//      *) breadh_first_search
+//      *) breadth_first_search
 //      *) connected_component_diameter
 //   7) OPTIONAL: print some statistics about the graph
 //      *) graph_info
@@ -444,7 +444,7 @@ static void similar_words(hash_table_t *hash_table,hash_table_node_t *from)
 //
 
 
-static int breadh_first_search(int maximum_number_of_vertices,hash_table_node_t **list_of_vertices,hash_table_node_t *origin,hash_table_node_t *goal)
+static int breadth_first_search(int maximum_number_of_vertices,hash_table_node_t **list_of_vertices,hash_table_node_t *origin,hash_table_node_t *goal)
 {
   // USAR UMA FILA (QUEUE) COM UM ARRAY
   // para o tamanho usar o numero de vertices (do componente conexo)
@@ -514,7 +514,7 @@ static void list_connected_component(hash_table_t *hash_table,const char *word)
   for (i = 0u; i < maximum_number_of_vertices; i++)
     vertices[i] = NULL;
 
-  int number_of_vertices = breadh_first_search(maximum_number_of_vertices, vertices, representative, representative);
+  int number_of_vertices = breadth_first_search(maximum_number_of_vertices, vertices, representative, representative);
 
   printf("\nVertices in connected component:\n");
   for (i = 0u; i < number_of_vertices; i++)
@@ -557,7 +557,7 @@ static int connected_component_diameter(hash_table_node_t *node) {
     visited_vertices[i] = NULL;
   }
 
-  breadh_first_search(maximum_number_of_vertices, all_vertices, node, node);
+  breadth_first_search(maximum_number_of_vertices, all_vertices, node, node);
   for (i = 0; i < maximum_number_of_vertices; i++)
   {
     all_vertices[i]->visited = 0;
@@ -572,7 +572,7 @@ static int connected_component_diameter(hash_table_node_t *node) {
   hash_table_node_t *temp;
 
   for (i = 0; i < maximum_number_of_vertices; i++) {
-    visited = breadh_first_search(maximum_number_of_vertices, visited_vertices, all_vertices[i], all_vertices[i]);
+    visited = breadth_first_search(maximum_number_of_vertices, visited_vertices, all_vertices[i], all_vertices[i]);
     temp = visited_vertices[visited - 1];
     for (j = 0; temp != NULL; j++)
       temp = temp->previous;
@@ -589,7 +589,7 @@ static int connected_component_diameter(hash_table_node_t *node) {
   
   hash_table_node_t *diameter_array[diameter + 1];
 
-  breadh_first_search(maximum_number_of_vertices,visited_vertices,diameter_x,diameter_y);
+  breadth_first_search(maximum_number_of_vertices,visited_vertices,diameter_x,diameter_y);
   for (i = 0; diameter_y->previous != NULL; i++) {
     diameter_array[i] = diameter_y;
     diameter_y = diameter_y->previous;
@@ -642,14 +642,14 @@ static int connected_component_diameter(hash_table_node_t *node) {
 //     diameter_array[i] = NULL;
 //   }
 //   int number_of_vertices;
-//   number_of_vertices = breadh_first_search(maximum_number_of_vertices, vertices, node, node);
+//   number_of_vertices = breadth_first_search(maximum_number_of_vertices, vertices, node, node);
 //   hash_table_node_t* last_first_search = vertices[number_of_vertices - 1];
 //   for (i = 0; i < number_of_vertices; i++)
 //   {
 //     vertices[i]->visited = 0;
 //     vertices[i]->previous = NULL;
 //   }
-//   number_of_vertices = breadh_first_search(maximum_number_of_vertices, vertices, last_first_search, last_first_search);
+//   number_of_vertices = breadth_first_search(maximum_number_of_vertices, vertices, last_first_search, last_first_search);
 //   hash_table_node_t* last_second_search = vertices[number_of_vertices - 1];
 //   for (i = 0; last_second_search != NULL; i++){
 //     diameter_array[i] = last_second_search;
@@ -712,7 +712,7 @@ static void path_finder(hash_table_t *hash_table,const char *from_word,const cha
   for (i = 0; i < maximum_number_of_vertices; i++)
     vertices[i] = NULL;
 
-  number_of_vertices = breadh_first_search(maximum_number_of_vertices, vertices, origin, goal);
+  number_of_vertices = breadth_first_search(maximum_number_of_vertices, vertices, origin, goal);
 
   if (number_of_vertices == -1)
   {
@@ -781,12 +781,6 @@ static void graph_info(hash_table_t *hash_table)
   printf("%d connected components\n", number_of_connected_components);
   printf("at most %d vertices in a connected component\n", max_number_of_vertices_in_connected_component);
   printf("at most %d edges in a connected component\n", max_number_of_edges_in_connected_component);
-
-
-  // hash_table_node_t *one = find_word(hash_table,"bica",0);
-  // hash_table_node_t *two = find_word(hash_table,"Zeca",0);
-  // printf("%s --- %s\n",find_representative(one),find_representative(two));
-
   
   int diameters[number_of_connected_components];
   for (i = 0; representatives[i] != NULL; i++) {
