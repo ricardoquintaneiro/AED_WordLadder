@@ -558,6 +558,11 @@ static int connected_component_diameter(hash_table_node_t *node) {
   }
 
   breadth_first_search(maximum_number_of_vertices, all_vertices, node, node);
+  if (maximum_number_of_vertices > 500) {
+    printf("Dealing with %s, %d nodes\r",node->word,maximum_number_of_vertices);
+  fflush(stdout);
+    
+    }
   for (i = 0; i < maximum_number_of_vertices; i++)
   {
     all_vertices[i]->visited = 0;
@@ -612,70 +617,14 @@ static int connected_component_diameter(hash_table_node_t *node) {
     all_vertices[i]->visited = 0;
     all_vertices[i]->previous = NULL;
   }
+  if (maximum_number_of_vertices > 500) {
+    printf("                                       \r");
+    fflush(stdout);
+  }
   free(all_vertices);
   free(visited_vertices);
   return diameter;
 }
-
-// static int connected_component_diameter(hash_table_node_t *node)
-// {
-//   int i, diameter = 0;
-//   int maximum_number_of_vertices = node->representative->number_of_vertices;
-//   hash_table_node_t **vertices = (hash_table_node_t **)malloc(maximum_number_of_vertices * sizeof(hash_table_node_t *));
-//   if (vertices == NULL)
-//   {
-//     fprintf(stderr, "connected_component_diameter: out of memory\n");
-//     exit(1);
-//   }
-//   for (i = 0; i < maximum_number_of_vertices; i++)
-//   {
-//     vertices[i] = NULL;
-//   }
-//   hash_table_node_t **diameter_array = (hash_table_node_t **)malloc(maximum_number_of_vertices * sizeof(hash_table_node_t *));
-//   if (diameter_array == NULL)
-//   {
-//     fprintf(stderr, "connected_component_diameter: out of memory\n");
-//     exit(1);
-//   }
-//   for (i = 0; i < maximum_number_of_vertices; i++)
-//   {
-//     diameter_array[i] = NULL;
-//   }
-//   int number_of_vertices;
-//   number_of_vertices = breadth_first_search(maximum_number_of_vertices, vertices, node, node);
-//   hash_table_node_t* last_first_search = vertices[number_of_vertices - 1];
-//   for (i = 0; i < number_of_vertices; i++)
-//   {
-//     vertices[i]->visited = 0;
-//     vertices[i]->previous = NULL;
-//   }
-//   number_of_vertices = breadth_first_search(maximum_number_of_vertices, vertices, last_first_search, last_first_search);
-//   hash_table_node_t* last_second_search = vertices[number_of_vertices - 1];
-//   for (i = 0; last_second_search != NULL; i++){
-//     diameter_array[i] = last_second_search;
-//     last_second_search = last_second_search->previous;
-//   }
-  
-//   diameter = i - 1;
-//   if (diameter > largest_diameter) {
-//     largest_diameter = diameter;
-//     if (largest_diameter_example != NULL)
-//       free(largest_diameter_example);
-//     largest_diameter_example = (hash_table_node_t **)malloc((diameter + 1) * sizeof(hash_table_node_t *));
-//     for (i = 0; i < diameter + 1; i++) {
-//       largest_diameter_example[i] = diameter_array[i];
-//     }
-//   }
-  
-//   for (i = 0; i < number_of_vertices; i++)
-//   {
-//     vertices[i]->visited = 0;
-//     vertices[i]->previous = NULL;
-//   }
-//   free(diameter_array);
-//   free(vertices);
-//   return diameter;
-// }
 
 //
 // find the shortest path from a given word to another given word (to be done)
@@ -746,11 +695,12 @@ static void graph_info(hash_table_t *hash_table)
 {
   unsigned int i,j=0;
   hash_table_node_t *node;
-  int number_of_edges = 0;
   int number_of_connected_components = 0;
   int max_number_of_vertices_in_connected_component = 0;
   int max_number_of_edges_in_connected_component = 0;
+  // int *number_of_vertices_per_entry = (int *)calloc(hash_table->hash_table_size,sizeof(int));
   hash_table_node_t **representatives = (hash_table_node_t **)malloc(hash_table->number_of_entries * sizeof(hash_table_node_t *));
+
   if (representatives == NULL)
   {
     fprintf(stderr, "graph_info: out of memory\n");
@@ -764,9 +714,9 @@ static void graph_info(hash_table_t *hash_table)
   {
     for (node = hash_table->heads[i]; node != NULL; node = node->next)
     {
+      // // number_of_vertices_per_entry[i]++;
       if (find_representative(node) == node)
       {
-        number_of_edges += node->number_of_edges;
         number_of_connected_components++;
         representatives[j++] = node;
         if (node->number_of_vertices > max_number_of_vertices_in_connected_component)
@@ -776,35 +726,59 @@ static void graph_info(hash_table_t *hash_table)
       }
     }
   }
+
   printf("%d vertices\n", hash_table->number_of_entries);
-  printf("%d edges should be equal to %d\n", number_of_edges, hash_table->number_of_edges);
+  printf("%d edges\n", hash_table->number_of_edges);
   printf("%d connected components\n", number_of_connected_components);
   printf("at most %d vertices in a connected component\n", max_number_of_vertices_in_connected_component);
   printf("at most %d edges in a connected component\n", max_number_of_edges_in_connected_component);
   
+  printf("On average %f vertices per hash table entry\n",
+    (float)hash_table->number_of_entries/(float)hash_table->hash_table_size);
+  // for (i = 0u; i < hash_table->hash_table_size; i++) {
+  // //   printf("%d ",number_of_vertices_per_entry[i]);           // Para fazer histograma
+  // }
+  // printf("\n");
+
+  int number_of_vertices[number_of_connected_components];
   int diameters[number_of_connected_components];
   for (i = 0; representatives[i] != NULL; i++) {
     diameters[i] = connected_component_diameter(representatives[i]);
+    number_of_vertices[i] = representatives[i]->number_of_vertices;
   }
 
   int *counts = (int *)calloc(largest_diameter + 1,sizeof(int));
+  int *counts2 = (int *)calloc(max_number_of_vertices_in_connected_component + 1,sizeof(int));
   for (i = 0; i < number_of_connected_components; i++) {
     counts[diameters[i]]++;
+    counts2[number_of_vertices[i]]++;
   }
+
+  printf("number of connected components with a diameter of\n");
   for (i = 0; i < largest_diameter + 1; i++) {
     if (counts[i] > 0) {
       printf("  %d; %d\n",i,counts[i]);
     }
   }
+
+  printf("number of connected components with a number of vertices of\n");
+  for (i = 0; i < max_number_of_vertices_in_connected_component + 1; i++) {
+    if (counts2[i] > 0) {
+      printf("  %d; %d\n",i,counts2[i]);
+    }
+  }
+
   printf("\nlargest word ladder:\n");
 
   for (i = 0; i < largest_diameter + 1; i++) {
       printf(" [%3d] %s\n", i, largest_diameter_example[i]->word);
     }
   printf("\n");
+  // free(number_of_vertices_per_entry);
   free(largest_diameter_example);
   free(representatives);
   free(counts);
+  free(counts2);
 }
 
 
