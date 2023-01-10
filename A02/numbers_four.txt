@@ -1,0 +1,14 @@
+number of connected components with a diameter of
+  0; 164
+  1; 19
+  2; 2
+  3; 1
+  15; 1
+
+number of connected components with a number of vertices of
+  1; 164
+  2; 16
+  3; 4
+  4; 1
+  6; 1
+  1931; 1
